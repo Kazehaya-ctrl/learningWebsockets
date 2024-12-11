@@ -1,35 +1,49 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+	const [socket, setSocket] = useState<null | WebSocket>(null);
+	const [msg, setMsg] = useState<string>("");
+	const [messages, setMessages] = useState<any>([]);
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+	useEffect(() => {
+		const socket = new WebSocket("ws://localhost:3001");
+		socket.onopen = () => {
+			console.log("Socket Connected");
+			setSocket(socket);
+		};
+
+		socket.onmessage = (message) => {
+			console.log("Recieved Message: " + message.data);
+			setMessages((m: Array<string>) => [...m, message.data]);
+		};
+	}, []);
+
+	if (!socket) {
+		return (
+			<>
+				<div>Connecting to websocket server...</div>
+			</>
+		);
+	}
+	return (
+		<>
+			<input value={msg} onChange={(e) => setMsg(e.target.value)}></input>
+			<button
+				onClick={() => {
+					socket.send(msg);
+					setMsg("");
+				}}
+			>
+				Send
+			</button>
+			<div>
+				{messages.map((message: string, index: number) => {
+					return <div key={index}>{message}</div>;
+				})}
+			</div>
+		</>
+	);
 }
 
-export default App
+export default App;
